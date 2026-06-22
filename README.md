@@ -93,7 +93,7 @@ Returns the final position in mm, or `None` on failure.
 
 ### `move_to_mm(target_mm, tolerance_mm=0.1, max_iterations=5, timeout_per_step=10.0) -> float | None`
 
-Move to an **absolute target position** in millimeters using a software closed loop. Internally iterates `move_relative_mm()` with a descending speed schedule (50 → 10 → 3 → 1 r/min) so that speed-mode overshoot collapses into `tolerance_mm` (default ±0.1 mm).
+Move to an **absolute target position** in millimeters using a software closed loop. Internally iterates `move_relative_mm()` with a per-iteration speed computed by a `PIDController` (tuned to a P-controller) so that speed-mode overshoot collapses into `tolerance_mm` (default ±0.1 mm).
 
 - `target_mm` -- absolute target position in mm (from power-on origin).
 - `tolerance_mm` -- acceptable position error in mm.
@@ -102,7 +102,7 @@ Move to an **absolute target position** in millimeters using a software closed l
 
 Returns the final position in mm, or `None` on failure. Returns early without motion if already within tolerance. Aborts if the residual error stops decreasing (convergence stalled).
 
-**Tuning speeds:** The iteration speeds are taken from the class attribute `move_to_mm_speed_schedule` (default `[50, 10, 3, 1, 1]` r/min). Edit this one list at the top of the class to change `move_to_mm` speeds project-wide; the first entry is the coarse approach speed and later entries shrink overshoot.
+**Tuning:** The per-iteration speed comes from the `PIDController` class (its gains are class attributes: `kp` / `ki` / `kd` / `output_min` / `output_max` / `deadband_mm` / `derivative_alpha`). It is currently a **P-controller** (`kp=4.0`, `ki=kd=0`, `output_max=25` r/min); edit those class attributes to retune `move_to_mm` project-wide without changing call sites.
 
 ### `move_relative(pulse_offset, speed=50, tolerance=500, timeout=10.0) -> int | None`
 

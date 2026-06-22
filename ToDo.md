@@ -382,3 +382,42 @@ Task 12 found the amp on `/dev/ttyUSB3` after USB re-enumeration
       (see LP §1)
 - [x] `gh issue create` for this task (#15)
 - [x] Commit, push, and open PR to `main` (6b5e29d, PR #13)
+
+---
+
+## Task 15: Promote the PID controller to production (Issue #11)
+
+**Date**: 2026-06-22
+**GitHub Issue**: #11 ("P-Controller implementation")
+
+### Purpose
+
+Promote the hardware-tuned PID (prototyped in claude_test under Issue
+#9) into `LinearMotorController.py`, replacing move_to_mm()'s fixed
+[50, 10, 3, 1, 1] r/min speed schedule. Tuning converged on a
+P-controller, matching the issue title.
+
+### Checklist
+
+- [x] Add a `PIDController` class to `LinearMotorController.py`
+      (same convention as the claude_test prototype: gains as class
+      attributes, conditional anti-windup, EMA derivative,
+      `[output_min, output_max]` saturation, deadband)
+- [x] Rewrite `move_to_mm()` to drive `PIDController` instead of
+      `move_to_mm_speed_schedule`; keep the signature, the
+      already-within-tolerance early return, the residual-stalled
+      abort, and the max_iterations cap
+- [x] Remove the `move_to_mm_speed_schedule` class attribute
+- [x] Update `README.md` (move_to_mm now PID-driven; tuning via the
+      `PIDController` class attributes)
+- [x] `ruff check` + `ruff format --check` clean; `py_compile` OK;
+      offline PIDController checks 7/7
+- [ ] Hardware verify: `move_to_mm` converges to tolerance via the
+      P-controller (supervised; frees the rail port from the bridge)
+- [ ] Commit, push, open PR
+
+> P-only kp=4.0 (ki=kd=0), output_max=25 r/min. Backward compatible:
+> the move_to_mm signature is unchanged, so rail_bridge.py (HOME /
+> absolute) and the claude_test scripts keep working. May need a
+> trivial rebase if Issue #6 (PR #18) merges first (both touch
+> LinearMotorController.py, but in different regions).
